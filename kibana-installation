@@ -1,38 +1,42 @@
+
 - name: Kibana Installation(7.x)
-  hosts: kibana
+  hosts: localhost
+  environment:
+        http_proxy: http://cloudproxy-r.nat.bt.com:8080
+        https_proxy: http://cloudproxy-r.nat.bt.com:8080
   become: true
 
   vars:
-    
-    kibana_version: 7.17.5
+
+    kibana_version: 7.16.2
     kibana_destination: /opt
     application: kibana
-    
+
 
 
   tasks:
 
-    - name: Download Logstash RPM package {{ kibana_version }}
+    - name: Download Kibana RPM package {{ kibana_version }}
       ansible.builtin.get_url:
         url: https://artifacts.elastic.co/downloads/kibana/kibana-{{ kibana_version }}-x86_64.rpm
-        dest: {{ logstash_destination }}
+        dest: "{{ kibana_destination }}"
         #checksum: "sha512:https://artifacts.elastic.co/downloads/kibana/kibana-{{ kibana_version }}-x86_64.rpm.sha512"
-    
-    
+
+
  #   - name: Install {{ application }}
  #     ansible.builtin.yum:
- #       name: /{{ kibana_destination }}/kibana-{{ kibana_version }}-x86_64.rpm
+ #       name: "{{ kibana_destination }}/kibana-{{ kibana_version }}-x86_64.rpm"
  #       state: present
-        
-    - name: Install {{ application }}
-      ansible.builtin.shell: rpm --install kibana-{{ kibana_version }}--x86_64.rpm
-        
 
-        
+    - name: Install {{ application }}
+      ansible.builtin.shell: rpm -i /opt/kibana-{{ kibana_version }}-x86_64.rpm
+
+
+
     - name: Just force systemd to reload
       ansible.builtin.systemd:
         daemon_reload: yes
-        
+
     - name: Enable service {{ application }} and ensure it is not masked
       ansible.builtin.systemd:
         name: "{{ application }}"
@@ -47,7 +51,7 @@
 
     - name: checking service status
       ansible.builtin.command: systemctl status "{{ application }}"
-        register: result
+      register: result
 
     - name: showing kibana status report
       ansible.builtin.debug:
